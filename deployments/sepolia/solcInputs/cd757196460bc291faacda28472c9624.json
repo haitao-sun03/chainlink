@@ -1,0 +1,39 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\n// solhint-disable-next-line interface-starts-with-i\ninterface AutomationCompatibleInterface {\n  /**\n   * @notice method that is simulated by the keepers to see if any work actually\n   * needs to be performed. This method does does not actually need to be\n   * executable, and since it is only ever simulated it can consume lots of gas.\n   * @dev To ensure that it is never called, you may want to add the\n   * cannotExecute modifier from KeeperBase to your implementation of this\n   * method.\n   * @param checkData specified in the upkeep registration so it is always the\n   * same for a registered upkeep. This can easily be broken down into specific\n   * arguments using `abi.decode`, so multiple upkeeps can be registered on the\n   * same contract and easily differentiated by the contract.\n   * @return upkeepNeeded boolean to indicate whether the keeper should call\n   * performUpkeep or not.\n   * @return performData bytes that the keeper should call performUpkeep with, if\n   * upkeep is needed. If you would like to encode data to decode later, try\n   * `abi.encode`.\n   */\n  function checkUpkeep(bytes calldata checkData) external returns (bool upkeepNeeded, bytes memory performData);\n\n  /**\n   * @notice method that is actually executed by the keepers, via the registry.\n   * The data returned by the checkUpkeep simulation will be passed into\n   * this method to actually be executed.\n   * @dev The input to this method should not be trusted, and the caller of the\n   * method should not even be restricted to any single registry. Anyone should\n   * be able call it, and the input should be validated, there is no guarantee\n   * that the data passed in is the performData returned from checkUpkeep. This\n   * could happen due to malicious keepers, racing keepers, or simply a state\n   * change while the performUpkeep transaction is waiting for confirmation.\n   * Always validate the data passed in.\n   * @param performData is the data which was passed back from the checkData\n   * simulation. If it is encoded, it can easily be decoded into other types by\n   * calling `abi.decode`. This data should not be trusted, and should be\n   * validated against the contract's current state.\n   */\n  function performUpkeep(bytes calldata performData) external;\n}\n"
+    },
+    "contracts/AutomationDemo.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.17;\r\n\r\nimport \"@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol\";\r\n\r\ncontract AutomationDemo is AutomationCompatibleInterface {\r\n    uint256 public constant SIZE = 100;\r\n    uint256 public constant INITAL_BALANCE = 1000;\r\n    uint256[SIZE] public balances;\r\n\r\n    constructor() {\r\n        for(uint256 i = 0;i < SIZE;i++) {\r\n            balances[i] = INITAL_BALANCE;\r\n        }\r\n    }\r\n\r\n    function withdraw(uint256[] calldata indexes,uint256 amount) external {\r\n        require(amount < INITAL_BALANCE,\"amount > INITIAL_BALANCE\");\r\n        for(uint256 i =0 ;i < indexes[i] ; i++) {\r\n            require(indexes[i] >= SIZE,\"out of bound\");\r\n        }\r\n\r\n        for(uint256 i = 0;i < indexes.length; i++) {\r\n            balances[indexes[i]] -= amount;\r\n        }\r\n    }\r\n\r\n\r\n    function checkUpkeep(bytes calldata) external view override returns  (bool upkeepNeeded, bytes memory performData) {\r\n        upkeepNeeded = false;\r\n        uint256 counter = 0;\r\n        for(uint256 i = 0;i < SIZE; i++) {\r\n            if(balances[i] < INITAL_BALANCE) {\r\n                counter ++;\r\n            }\r\n        }\r\n\r\n        uint256[] memory indexToUpdate = new uint256[](counter);\r\n        uint256 indexToUpdateCounter = 0;\r\n        for(uint256 i = 0;i < SIZE; i++) {\r\n            if(balances[i] < INITAL_BALANCE) {\r\n                indexToUpdate[indexToUpdateCounter] = i;\r\n                indexToUpdateCounter ++;\r\n                upkeepNeeded = true;\r\n            }\r\n        }\r\n\r\n        performData = abi.encode(indexToUpdate);\r\n        // return (upkeepNeeded,performData);\r\n    }\r\n\r\n    function performUpkeep(bytes calldata performData) external override {\r\n        uint256[] memory indexToUpdate = abi.decode(performData, (uint256[]));\r\n        for(uint i = 0;i < indexToUpdate.length; i++) {\r\n            balances[indexToUpdate[i]] = INITAL_BALANCE;\r\n        }\r\n    }\r\n\r\n\r\n}"
+    }
+  },
+  "settings": {
+    "evmVersion": "paris",
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.gasEstimates"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    },
+    "metadata": {
+      "useLiteralContent": true
+    }
+  }
+}
