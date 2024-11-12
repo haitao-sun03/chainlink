@@ -32,7 +32,8 @@ describe("test vrf consumer",async function () {
         // 需要通过mock合约手动将随机数写回consumer合约,因为这时候没有链下的vrf随机数生成代码调用写回函数
         const requestId = await chainLinkVRFConsumer.sRequestId()
         const consumerAddr = chainLinkVRFConsumer.target        
-        await vrfCoordinator.fulfillRandomWords(requestId, consumerAddr)
+        const tx = await vrfCoordinator.fulfillRandomWords(requestId, consumerAddr)
+        await tx.wait()
 
         // get the random when after vrfCoordinator.fulfillRandomWords success
         const firstRandom = await chainLinkVRFConsumer.sRandomWords(0);
