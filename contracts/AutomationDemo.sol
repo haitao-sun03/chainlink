@@ -15,10 +15,10 @@ contract AutomationDemo is AutomationCompatibleInterface {
     }
 
     function withdraw(uint256[] calldata indexes,uint256 amount) external {
-        require(amount < INITAL_BALANCE,"amount > INITIAL_BALANCE");
-        for(uint256 i =0 ;i < indexes.length ; i++) {
-            require(indexes[i] < SIZE,"out of bound");
-        }
+        // require(amount < INITAL_BALANCE,"amount > INITIAL_BALANCE");
+        // for(uint256 i =0 ;i < indexes.length ; i++) {
+        //     require(indexes[i] < SIZE,"out of bound");
+        // }
 
         for(uint256 i = 0;i < indexes.length; i++) {
             balances[indexes[i]] -= amount;
